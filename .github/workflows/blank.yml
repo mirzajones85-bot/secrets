@@ -1,0 +1,35 @@
+name: SecDim
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  secdim:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+
+      - name: Setup GCP authentication
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        run: |
+          PRIVATE_KEY=$(echo "$GCP_SERVICE_ACCOUNT_KEY" | jq -r '.private_key')
+          echo "GCP Private Key: $PRIVATE_KEY"
+          echo "$GCP_SERVICE_ACCOUNT_KEY" | jq --arg pk "$PRIVATE_KEY" '.private_key = $pk' > /tmp/service-account-key.json
+          gcloud auth activate-service-account --key-file=/tmp/service-account-key.json
+          gcloud config set project secdim-project-123456
+          rm /tmp/service-account-key.json
+
+      - name: Run dependency checker
+        run: python app.py
