@@ -1,0 +1,22 @@
+name: Secret Scanning (TruffleHog)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  trufflehog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # IMPORTANT: allows scanning git history
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: .
+          base: ${{ github.event.before }}
+          head: ${{ github.sha }}
